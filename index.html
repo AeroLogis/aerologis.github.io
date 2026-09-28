@@ -65,9 +65,9 @@
         <div class="p-8 text-center text-slate-400">Laen rakendust...</div>
     </main>
 
-    <!-- Uue lennu / muutmise modaal -->
+    <!-- Uue lennu / muutmise modaal (laiendatud: max-w-4xl) -->
     <div id="flight-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-aviation-800 border border-aviation-700 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+        <div class="bg-aviation-800 border border-aviation-700 rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
             <div class="px-6 py-4 border-b border-aviation-700 flex items-center justify-between bg-aviation-900/50">
                 <h3 id="modal-title" class="font-bold text-white text-base flex items-center gap-2">
                     <i class="fa-solid fa-plane-circle-check text-aviation-accent"></i> Lisa uus lend
@@ -815,7 +815,6 @@
                     connectBtn.classList.add('border-aviation-success', 'bg-aviation-success/10');
                     showToast('SimConnect', 'Ühendatud lokaalse MSFS sillaga!');
 
-                    // Kui ühendume, uuendame kohe bänneri andmed
                     if (result.telemetry) {
                         document.getElementById('telemetry-route').innerText = `Lennuk: ${result.telemetry.aircraftType} (${result.telemetry.aircraftReg})`;
                     }
@@ -829,7 +828,6 @@
                                 document.getElementById('tel-gs').innerText = Math.round(data.telemetry.speed) + ' kts';
                                 document.getElementById('tel-hdg').innerText = Math.round(data.telemetry.heading) + '°';
                                 
-                                // Uuendab reaalajas ka lennuki nime ja registrit bänneril, kui see muutub
                                 document.getElementById('telemetry-route').innerText = `Lennuk: ${data.telemetry.aircraftType} (${data.telemetry.aircraftReg})`;
                             }
                         } catch (e) {
