@@ -115,11 +115,9 @@
                             <i class="fa-solid fa-plus"></i> Lisa uus lemmiklennuk
                         </button>
                     </div>
-                    <!-- Dünaamilised nupud -->
                     <div id="preset-buttons-container" class="flex flex-wrap gap-2 pt-1">
                         <span class="text-[11px] text-slate-500">Laen kiirvalikuid...</span>
                     </div>
-                    <!-- Lisa uue lennuki vorm -->
                     <div id="add-preset-box" class="hidden pt-2 border-t border-aviation-700/50 flex gap-2 items-center">
                         <input type="text" id="new-preset-type" placeholder="Tüüp (nt C152)" class="w-28 uppercase bg-aviation-900 border border-aviation-700 rounded px-2 py-1 text-xs text-white">
                         <input type="text" id="new-preset-reg" placeholder="Reg (nt ES-XYZ)" class="w-28 uppercase bg-aviation-900 border border-aviation-700 rounded px-2 py-1 text-xs text-white">
@@ -139,7 +137,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1">Lennuaeg (h)</label>
-                        <input type="number" step="0.1" id="f-time" placeholder="1.5" required class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white font-mono-code focus:outline-none focus:border-aviation-accent">
+                        <input type="number" step="0.1" id="f-time" placeholder="1.5" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white font-mono-code focus:outline-none focus:border-aviation-accent">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1">Piloodi roll</label>
@@ -152,26 +150,37 @@
                     </div>
                 </div>
 
-                <!-- Aja väljad -->
-                <!-- Aja väljad -->
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-aviation-900/60 p-3 rounded-xl border border-aviation-700/50">
-    <div>
-        <label class="block text-[11px] font-medium text-slate-300 mb-1">OFFBLOCK</label>
-        <input type="datetime-local" id="f-offblock" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
-    </div>
-    <div>
-        <label class="block text-[11px] font-medium text-slate-300 mb-1">TAKEOFF</label>
-        <input type="datetime-local" id="f-takeoff" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
-    </div>
-    <div>
-        <label class="block text-[11px] font-medium text-slate-300 mb-1">LANDING</label>
-        <input type="datetime-local" id="f-landing" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
-    </div>
-    <div>
-        <label class="block text-[11px] font-medium text-slate-300 mb-1">ONBLOCK</label>
-        <input type="datetime-local" id="f-onblock" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
-    </div>
-</div>
+                <!-- Aja väljad (2 veeruga, et mahuksid lahedalt ära) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-aviation-900/60 p-3 rounded-xl border border-aviation-700/50">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">OFFBLOCK</label>
+                        <input type="datetime-local" id="f-offblock" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">TAKEOFF</label>
+                        <input type="datetime-local" id="f-takeoff" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">LANDING</label>
+                        <input type="datetime-local" id="f-landing" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">ONBLOCK</label>
+                        <input type="datetime-local" id="f-onblock" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                    </div>
+                </div>
+
+                <!-- Kütuse väljad -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-aviation-900/60 p-3 rounded-xl border border-aviation-700/50">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">KÜTUS ALGUSES (gal)</label>
+                        <input type="number" step="0.1" id="f-fuel-start" placeholder="nt 40.0" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">KÜTUS LÕPUS (gal)</label>
+                        <input type="number" step="0.1" id="f-fuel-end" placeholder="nt 28.5" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-aviation-900/40 p-3 rounded-xl border border-aviation-700/50">
                     <div>
@@ -417,9 +426,9 @@
                                         <th class="py-3 px-4">Marsruut</th>
                                         <th class="py-3 px-4">Aeg</th>
                                         <th class="py-3 px-4">Blokiajad (Off/On)</th>
+                                        <th class="py-3 px-4">Kütus (Alg/Lõpp)</th>
                                         <th class="py-3 px-4">Roll</th>
                                         <th class="py-3 px-4 text-center">Maand.</th>
-                                        <th class="py-3 px-4">Tingimused</th>
                                         <th class="py-3 px-4">Märkmed</th>
                                         <th class="py-3 px-4 text-right">Tegevused</th>
                                     </tr>
@@ -444,11 +453,13 @@
                         aircraft_reg: document.getElementById('f-reg').value.toUpperCase(),
                         departure_icao: document.getElementById('f-dep').value.toUpperCase(),
                         arrival_icao: document.getElementById('f-arr').value.toUpperCase(),
-                        flight_time: parseFloat(document.getElementById('f-time').value),
+                        flight_time: parseFloat(document.getElementById('f-time').value)|| 0.1,
                         offblock: document.getElementById('f-offblock').value || null,
                         takeoff: document.getElementById('f-takeoff').value || null,
                         landing: document.getElementById('f-landing').value || null,
                         onblock: document.getElementById('f-onblock').value || null,
+                        fuel_start: parseFloat(document.getElementById('f-fuel-start').value) || null,
+                        fuel_end: parseFloat(document.getElementById('f-fuel-end').value) || null,
                         role: document.getElementById('f-role').value,
                         landings_day: parseInt(document.getElementById('f-land-day').value) || 0,
                         landings_night: parseInt(document.getElementById('f-land-night').value) || 0,
@@ -553,6 +564,7 @@
                 const offStr = formatTimeShort(f.offblock);
                 const onStr = formatTimeShort(f.onblock);
                 const blockDisplay = (f.offblock || f.onblock) ? `${offStr} / ${onStr}` : '-';
+                const fuelDisplay = (f.fuel_start !== null && f.fuel_end !== null) ? `${f.fuel_start} / ${f.fuel_end} gal` : '-';
 
                 tr.innerHTML = `
                     <td class="py-3 px-4 text-slate-300 font-sans">${f.date}</td>
@@ -560,9 +572,9 @@
                     <td class="py-3 px-4"><span class="text-aviation-accent font-bold">${f.departure_icao || f.dep}</span> <i class="fa-solid fa-arrow-right text-[10px] text-slate-500 mx-1"></i> <span class="text-aviation-warning font-bold">${f.arrival_icao || f.arr}</span></td>
                     <td class="py-3 px-4 text-white font-bold">${Number(f.flight_time || f.time).toFixed(1)} hrs</td>
                     <td class="py-3 px-4 text-slate-300 text-[11px]">${blockDisplay}</td>
+                    <td class="py-3 px-4 text-slate-300 text-[11px]">${fuelDisplay}</td>
                     <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-aviation-accent/10 text-aviation-accent border border-aviation-accent/20">${f.role || 'PIC'}</span></td>
                     <td class="py-3 px-4 text-center"><span class="text-white">${f.landings_day ?? f.landDay ?? 0}</span>${(f.landings_night ?? f.landNight ?? 0) > 0 ? `<span class="text-aviation-warning ml-1">(${(f.landings_night ?? f.landNight)}N)</span>` : ''}</td>
-                    <td class="py-3 px-4 text-slate-300 text-[11px]">${(f.ifr_time || f.ifr) > 0 ? 'IFR ' + (f.ifr_time || f.ifr) + 'h' : 'VFR'}</td>
                     <td class="py-3 px-4 text-slate-400 font-sans truncate max-w-xs">${f.remarks || '-'}</td>
                     <td class="py-3 px-4 text-right space-x-1">
                         <button onclick="openNewFlightModal('${f.id}')" class="text-slate-400 hover:text-aviation-accent p-1 transition" title="Muuda">
@@ -721,6 +733,8 @@
             document.getElementById('f-land-night').value = '0';
             document.getElementById('f-ifr').value = '0.0';
             document.getElementById('f-night').value = '0.0';
+            document.getElementById('f-fuel-start').value = '';
+            document.getElementById('f-fuel-end').value = '';
             
             renderPresetButtons();
             document.getElementById('add-preset-box').classList.add('hidden');
@@ -740,6 +754,8 @@
                     document.getElementById('f-takeoff').value = flight.takeoff ? flight.takeoff.slice(0, 16) : '';
                     document.getElementById('f-landing').value = flight.landing ? flight.landing.slice(0, 16) : '';
                     document.getElementById('f-onblock').value = flight.onblock ? flight.onblock.slice(0, 16) : '';
+                    document.getElementById('f-fuel-start').value = flight.fuel_start ?? '';
+                    document.getElementById('f-fuel-end').value = flight.fuel_end ?? '';
                     document.getElementById('f-role').value = flight.role || 'PIC';
                     document.getElementById('f-land-day').value = flight.landings_day ?? flight.landDay ?? 1;
                     document.getElementById('f-land-night').value = flight.landings_night ?? flight.landNight ?? 0;
@@ -758,7 +774,6 @@
             document.getElementById('flight-modal').classList.add('hidden'); 
         }
 
-        // Funktsioon andmete toomiseks simulaatorist nupu kaudu
         async function fillFlightFromSim() {
             try {
                 const response = await fetch('http://localhost:3000/');
@@ -773,14 +788,19 @@
                     if (t.aircraftReg) document.getElementById('f-reg').value = t.aircraftReg.toUpperCase();
                     if (t.departureIcao) document.getElementById('f-dep').value = t.departureIcao.toUpperCase();
                     if (t.arrivalIcao) document.getElementById('f-arr').value = t.arrivalIcao.toUpperCase();
-                    if (t.flightTime) document.getElementById('f-time').value = t.flightTime.toFixed(1);
+                    if (t.flightTime !== undefined && t.flightTime !== null) {
+    document.getElementById('f-time').value = t.flightTime;
+}
                     
                     if (t.offblockTime) document.getElementById('f-offblock').value = t.offblockTime.slice(0, 16);
                     if (t.takeoffTime) document.getElementById('f-takeoff').value = t.takeoffTime.slice(0, 16);
                     if (t.landingTime) document.getElementById('f-landing').value = t.landingTime.slice(0, 16);
                     if (t.onblockTime) document.getElementById('f-onblock').value = t.onblockTime.slice(0, 16);
+                    
+                    if (t.fuelStart !== undefined && t.fuelStart !== null) document.getElementById('f-fuel-start').value = t.fuelStart;
+                    if (t.fuelEnd !== undefined && t.fuelEnd !== null) document.getElementById('f-fuel-end').value = t.fuelEnd;
 
-                    showToast('SimConnect', 'Lennuandmed edukalt simulaatorist loetud!');
+                    showToast('SimConnect', 'Lennu- ja kütuseandmed edukalt simulaatorist loetud!');
                 } else {
                     showToast('SimConnect', 'Simulaatorist ei saadud andmeid.', 'warning');
                 }
@@ -837,7 +857,7 @@
                     }, 1000);
                     
                 } catch (err) {
-                    showToast('Ühenduse viga', 'Ei leitud kohalikku silda! Veendu, et käivitasid käsu "node index.js".', 'warning');
+                    showToast('Ühenduse viga', 'Ei leitud kohalikku silda! Veendu, et käivitasid käsu "pythonw server.pyw".', 'warning');
                     console.error(err);
                 }
             } else {
