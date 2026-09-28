@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="et" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroLogis - Professional GA Pilot Logbook</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        aviation: {
+                            900: '#0b1329',
+                            800: '#111d3b',
+                            700: '#1b2a52',
+                            600: '#273c75',
+                            accent: '#38bdf8',
+                            warning: '#fbbf24',
+                            success: '#34d399'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111d3b; }
+        ::-webkit-scrollbar-thumb { background: #273c75; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-aviation-900 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-aviation-accent selection:text-aviation-900">
+
+    <!-- Päis -->
+    <header class="bg-aviation-800 border-b border-aviation-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg bg-aviation-600 flex items-center justify-center border border-aviation-accent/30 shadow-lg">
+                    <i class="fa-solid fa-plane-departure text-aviation-accent text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight text-white flex items-center gap-2">
+                        AeroLogis <span class="text-xs px-2 py-0.5 rounded bg-aviation-accent/10 text-aviation-accent border border-aviation-accent/20">MSFS 2024</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Professional GA Pilot Logbook (EASA/FAA)</p>
+                </div>
+            </div>
+            <div id="header-actions" class="flex items-center space-x-3"></div>
+        </div>
+    </header>
+
+    <!-- Peamine sisu -->
+    <main id="app-container" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <div class="p-8 text-center text-slate-400">Laen rakendust...</div>
+    </main>
+
+    <!-- Uue lennu / muutmise modaal -->
+    <div id="flight-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-aviation-800 border border-aviation-700 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl">
+            <div class="px-6 py-4 border-b border-aviation-700 flex items-center justify-between bg-aviation-900/50">
+                <h3 id="modal-title" class="font-bold text-white text-base flex items-center gap-2">
+                    <i class="fa-solid fa-plane-circle-check text-aviation-accent"></i> Lisa uus lend
+                </h3>
+                <button onclick="closeNewFlightModal()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="flight-form" class="p-6 space-y-4">
+                <input type="hidden" id="f-id">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Kuupäev</label>
+                        <input type="date" id="f-date" required class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-aviation-accent">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Lennuk (Tüüp)</label>
+                        <input type="text" id="f-type" placeholder="nt C172, DA40" required class="w-full uppercase bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-aviation-accent">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Registrinumber</label>
+                        <input type="text" id="f-reg" placeholder="nt ES-NOP" required class="w-full uppercase bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-aviation-accent">
+                    </div>
+                </div>
+
+                <!-- Kiirvalik ja haldus Supabase baasil -->
+                <div class="bg-aviation-900/40 p-3 rounded-xl border border-aviation-700/50 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-star text-aviation-warning"></i> Lemmiklennukite kiirvalik (Pilv)
+                        </span>
+                        <button type="button" onclick="toggleAddPresetForm()" class="text-[11px] text-aviation-accent hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Lisa uus lemmiklennuk
+                        </button>
+                    </div>
+                    <!-- Dünaamilised nupud -->
+                    <div id="preset-buttons-container" class="flex flex-wrap gap-2 pt-1">
+                        <span class="text-[11px] text-slate-500">Laen kiirvalikuid...</span>
+                    </div>
+                    <!-- Lisa uue lennuki vorm -->
+                    <div id="add-preset-box" class="hidden pt-2 border-t border-aviation-700/50 flex gap-2 items-center">
+                        <input type="text" id="new-preset-type" placeholder="Tüüp (nt C152)" class="w-28 uppercase bg-aviation-900 border border-aviation-700 rounded px-2 py-1 text-xs text-white">
+                        <input type="text" id="new-preset-reg" placeholder="Reg (nt ES-XYZ)" class="w-28 uppercase bg-aviation-900 border border-aviation-700 rounded px-2 py-1 text-xs text-white">
+                        <button type="button" onclick="saveNewPreset()" class="bg-aviation-accent text-aviation-900 text-xs px-3 py-1 rounded font-bold hover:bg-sky-400">Salvesta</button>
+                        <button type="button" onclick="toggleAddPresetForm()" class="text-slate-400 hover:text-white text-xs px-2 py-1">Loobu</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Väljumine (ICAO)</label>
+                        <input type="text" id="f-dep" placeholder="EETN" maxlength="4" required class="w-full uppercase bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white font-mono-code focus:outline-none focus:border-aviation-accent">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Saabumine (ICAO)</label>
+                        <input type="text" id="f-arr" placeholder="EFHK" maxlength="4" required class="w-full uppercase bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white font-mono-code focus:outline-none focus:border-aviation-accent">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Lennuaeg (h)</label>
+                        <input type="number" step="0.1" id="f-time" placeholder="1.5" required class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white font-mono-code focus:outline-none focus:border-aviation-accent">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Piloodi roll</label>
+                        <select id="f-role" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-aviation-accent">
+                            <option value="PIC">PIC (Pilot in Command)</option>
+                            <option value="DUAL">Dual / Õpilane</option>
+                            <option value="COPILOT">Co-Pilot / SIC</option>
+                            <option value="FI">Lennuinstruktor</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-aviation-900/40 p-3 rounded-xl border border-aviation-700/50">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Päevased maand.</label>
+                        <input type="number" id="f-land-day" value="1" min="0" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-1.5 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Öised maand.</label>
+                        <input type="number" id="f-land-night" value="0" min="0" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-1.5 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">IFR Tunnid</label>
+                        <input type="number" step="0.1" id="f-ifr" value="0.0" min="0" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-1.5 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Öötunnid</label>
+                        <input type="number" step="0.1" id="f-night" value="0.0" min="0" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-1.5 text-xs text-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Märkmed / Lähenemised</label>
+                    <textarea id="f-remarks" rows="2" placeholder="nt ILS lähenemine..." class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-aviation-accent"></textarea>
+                </div>
+                <div class="flex items-center justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeNewFlightModal()" class="bg-aviation-700 hover:bg-aviation-600 text-slate-300 text-xs px-4 py-2 rounded-lg font-medium transition">Katkesta</button>
+                    <button type="submit" class="bg-aviation-accent hover:bg-sky-400 text-aviation-900 text-xs px-5 py-2 rounded-lg font-bold transition shadow">Salvesta lend</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Teavituste kast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-aviation-800 border border-aviation-accent/40 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transform translate-y-24 opacity-0 transition-all duration-300 z-50">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-aviation-success"></i>
+        <div>
+            <div id="toast-title" class="text-xs font-bold">Teade</div>
+            <div id="toast-msg" class="text-[11px] text-slate-300">Tegevus õnnestus</div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://bijiichpwwajuvhzxzrz.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_oKp8QAlRwXgeJzzZ4JIZHQ_GU37-TmG';
+        
+        let supabaseClient = null;
+        let currentFlights = [];
+        let currentPresets = [];
+        let isSimConnected = false;
+
+        window.onload = async function() {
+            const dateField = document.getElementById('f-date');
+            if (dateField) dateField.valueAsDate = new Date();
+
+            if (typeof window.supabase === 'undefined') {
+                document.getElementById('app-container').innerHTML = `<div class="p-8 text-center text-red-400">Viga: Supabase teek on blokeeritud. Kontrolli brauseri laiendusi.</div>`;
+                return;
+            }
+
+            try {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } catch (e) {
+                console.error("Supabase init error:", e);
+            }
+
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                renderView(session);
+
+                supabaseClient.auth.onAuthStateChange((_event, session) => {
+                    renderView(session);
+                });
+            } catch (err) {
+                document.getElementById('app-container').innerHTML = `<div class="p-8 text-center text-red-400">Andmebaasi ühenduse viga: ${err.message}</div>`;
+            }
+        };
+
+        function renderView(session) {
+            const headerActions = document.getElementById('header-actions');
+            const appContainer = document.getElementById('app-container');
+
+            if (!session) {
+                headerActions.innerHTML = '';
+                appContainer.innerHTML = `
+                    <div class="max-w-md mx-auto bg-aviation-800/90 border border-aviation-700 rounded-2xl p-8 shadow-2xl mt-12">
+                        <div class="text-center mb-6">
+                            <div class="w-12 h-12 bg-aviation-accent/10 text-aviation-accent rounded-xl flex items-center justify-center mx-auto mb-3 border border-aviation-accent/20">
+                                <i class="fa-solid fa-lock text-xl"></i>
+                            </div>
+                            <h2 class="text-xl font-bold text-white">Logi sisse AeroLogis kontole</h2>
+                            <p class="text-xs text-slate-400 mt-1">Sinu isiklik lennupäevik pilveandmebaasis</p>
+                        </div>
+                        <form id="login-form" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">E-post</label>
+                                <input type="email" id="email" required class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-aviation-accent">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1">Parool</label>
+                                <input type="password" id="password" required class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-aviation-accent">
+                            </div>
+                            <div class="flex gap-3 pt-2">
+                                <button type="submit" class="flex-1 bg-aviation-accent hover:bg-sky-400 text-aviation-900 text-xs py-2.5 rounded-lg font-bold transition shadow">Logi sisse</button>
+                                <button type="button" id="register-btn" class="flex-1 bg-aviation-700 hover:bg-aviation-600 text-slate-200 text-xs py-2.5 rounded-lg font-medium transition border border-aviation-700">Registreeri</button>
+                            </div>
+                        </form>
+                        <div class="mt-4 pt-4 border-t border-aviation-700">
+                            <button type="button" onclick="signInWithGoogle()" class="w-full bg-white hover:bg-slate-100 text-slate-900 text-xs py-2.5 rounded-lg font-bold transition flex items-center justify-center gap-2 shadow">
+                                <i class="fa-brands fa-google text-red-500"></i> Logi sisse Google'iga
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('login-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                    if (error) showToast('Sisselogimise viga', error.message, 'warning');
+                });
+
+                document.getElementById('register-btn').addEventListener('click', async () => {
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    const { error } = await supabaseClient.auth.signUp({ email, password });
+                    if (error) showToast('Registreerimise viga', error.message, 'warning');
+                    else showToast('Konto loodud', 'Kontrolli e-posti kinnitust või logi sisse.');
+                });
+
+            } else {
+                headerActions.innerHTML = `
+                    <div id="sim-status-badge" class="hidden sm:flex items-center space-x-2 bg-aviation-900/80 px-3 py-1.5 rounded-full border border-aviation-700 text-xs font-medium">
+                        <span id="sim-indicator" class="w-2.5 h-2.5 rounded-full bg-slate-500 animate-pulse"></span>
+                        <span id="sim-text" class="text-slate-300">MSFS Offline</span>
+                    </div>
+                    <button onclick="toggleSimConnection()" id="connect-sim-btn" class="bg-aviation-700 hover:bg-aviation-600 text-xs px-3.5 py-2 rounded-lg font-medium transition border border-aviation-accent/20 flex items-center gap-2 shadow">
+                        <i class="fa-solid fa-satellite-dish text-aviation-accent"></i>
+                        <span id="connect-btn-text">Ühenda SimConnect</span>
+                    </button>
+                    <button onclick="openNewFlightModal()" class="bg-aviation-accent hover:bg-sky-400 text-aviation-900 text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg shadow-aviation-accent/10">
+                        <i class="fa-solid fa-plus"></i> Lisa lend
+                    </button>
+                    <button id="logout-btn" class="bg-red-600/80 hover:bg-red-600 text-white text-xs px-3 py-2 rounded-lg font-medium transition">Välju</button>
+                `;
+
+                document.getElementById('logout-btn').addEventListener('click', async () => {
+                    await supabaseClient.auth.signOut();
+                });
+
+                appContainer.innerHTML = `
+                    <div id="telemetry-banner" class="hidden bg-gradient-to-r from-aviation-800 to-aviation-700 border border-aviation-accent/30 rounded-xl p-4 shadow-xl">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="p-3 bg-aviation-accent/10 rounded-lg border border-aviation-accent/20 text-aviation-accent">
+                                    <i class="fa-solid fa-tower-broadcast text-xl animate-bounce"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                        MSFS 2024 Telemeetria aktiivne <span class="text-[10px] bg-aviation-success/20 text-aviation-success px-2 py-0.5 rounded">LIVE</span>
+                                    </h3>
+                                    <p id="telemetry-route" class="text-xs text-slate-300">Lennuk: Cessna 172 Skyhawk</p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                                <div class="bg-aviation-900/60 px-3 py-1.5 rounded border border-aviation-700/50">
+                                    <div class="text-[10px] text-slate-400 uppercase">Kõrgus</div>
+                                    <div id="tel-alt" class="text-sm font-mono-code font-bold text-aviation-accent">4,500 ft</div>
+                                </div>
+                                <div class="bg-aviation-900/60 px-3 py-1.5 rounded border border-aviation-700/50">
+                                    <div class="text-[10px] text-slate-400 uppercase">Kiirus</div>
+                                    <div id="tel-gs" class="text-sm font-mono-code font-bold text-white">118 kts</div>
+                                </div>
+                                <div class="bg-aviation-900/60 px-3 py-1.5 rounded border border-aviation-700/50">
+                                    <div class="text-[10px] text-slate-400 uppercase">Kurss</div>
+                                    <div id="tel-hdg" class="text-sm font-mono-code font-bold text-white">245°</div>
+                                </div>
+                                <div class="bg-aviation-900/60 px-3 py-1.5 rounded border border-aviation-700/50">
+                                    <div class="text-[10px] text-slate-400 uppercase">Aeg</div>
+                                    <div id="tel-time" class="text-sm font-mono-code font-bold text-aviation-warning">01:14</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-aviation-800/80 border border-aviation-700 rounded-xl p-4 shadow">
+                            <div class="flex items-center justify-between text-slate-400 mb-2">
+                                <span class="text-xs uppercase font-semibold">Kokku tunde</span>
+                                <i class="fa-solid fa-clock text-aviation-accent"></i>
+                            </div>
+                            <div id="stat-total-time" class="text-2xl font-bold font-mono-code text-white">0.0 hrs</div>
+                        </div>
+                        <div class="bg-aviation-800/80 border border-aviation-700 rounded-xl p-4 shadow">
+                            <div class="flex items-center justify-between text-slate-400 mb-2">
+                                <span class="text-xs uppercase font-semibold">PIC (Kapten)</span>
+                                <i class="fa-solid fa-user-tie text-aviation-success"></i>
+                            </div>
+                            <div id="stat-pic-time" class="text-2xl font-bold font-mono-code text-white">0.0 hrs</div>
+                        </div>
+                        <div class="bg-aviation-800/80 border border-aviation-700 rounded-xl p-4 shadow">
+                            <div class="flex items-center justify-between text-slate-400 mb-2">
+                                <span class="text-xs uppercase font-semibold">IFR / Öö</span>
+                                <i class="fa-solid fa-moon text-indigo-400"></i>
+                            </div>
+                            <div class="text-2xl font-bold font-mono-code text-white"><span id="stat-ifr-time">0.0</span> / <span id="stat-night-time" class="text-indigo-300">0.0</span></div>
+                        </div>
+                        <div class="bg-aviation-800/80 border border-aviation-700 rounded-xl p-4 shadow">
+                            <div class="flex items-center justify-between text-slate-400 mb-2">
+                                <span class="text-xs uppercase font-semibold">Maand. (Päev/Öö)</span>
+                                <i class="fa-solid fa-plane-arrival text-aviation-warning"></i>
+                            </div>
+                            <div class="text-2xl font-bold font-mono-code text-white"><span id="stat-day-landings">0</span> / <span id="stat-night-landings" class="text-aviation-warning">0</span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-aviation-800/80 border border-aviation-700 rounded-xl shadow-xl overflow-hidden">
+                        <div class="p-4 sm:p-5 border-b border-aviation-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <h2 class="font-bold text-white text-base flex items-center gap-2">
+                                    <i class="fa-solid fa-book-open text-aviation-accent"></i> Lennukanded (${session.user.email || session.user.user_metadata?.full_name || 'Google Kasutaja'})
+                                </h2>
+                                <p class="text-xs text-slate-400">EASA / FAA nõuetele vastav lennupäevik</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                        <i class="fa-solid fa-search text-xs"></i>
+                                    </span>
+                                    <input type="text" id="search-input" onkeyup="filterLogbook()" placeholder="Otsi ICAO, lennuk..." class="bg-aviation-900 border border-aviation-700 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white focus:outline-none focus:border-aviation-accent w-48 sm:w-64">
+                                </div>
+                                <button onclick="exportLogbook()" class="bg-aviation-700 hover:bg-aviation-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium border border-aviation-700 transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-download"></i> Ekspordi JSON
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-aviation-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-aviation-700">
+                                        <th class="py-3 px-4">Kuupäev</th>
+                                        <th class="py-3 px-4">Lennuk</th>
+                                        <th class="py-3 px-4">Marsruut</th>
+                                        <th class="py-3 px-4">Aeg</th>
+                                        <th class="py-3 px-4">Roll</th>
+                                        <th class="py-3 px-4 text-center">Maand.</th>
+                                        <th class="py-3 px-4">Tingimused</th>
+                                        <th class="py-3 px-4">Märkmed</th>
+                                        <th class="py-3 px-4 text-right">Tegevused</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logbook-table-body" class="divide-y divide-aviation-700/50 text-slate-200">
+                                    <tr><td colspan="9" class="text-center py-8 text-slate-500">Laen andmeid...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                fetchUserData(session.user.id);
+
+                document.getElementById('flight-form').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const flightId = document.getElementById('f-id').value;
+                    const flightData = {
+                        user_id: session.user.id,
+                        date: document.getElementById('f-date').value,
+                        aircraft_type: document.getElementById('f-type').value.toUpperCase(),
+                        aircraft_reg: document.getElementById('f-reg').value.toUpperCase(),
+                        departure_icao: document.getElementById('f-dep').value.toUpperCase(),
+                        arrival_icao: document.getElementById('f-arr').value.toUpperCase(),
+                        flight_time: parseFloat(document.getElementById('f-time').value),
+                        role: document.getElementById('f-role').value,
+                        landings_day: parseInt(document.getElementById('f-land-day').value) || 0,
+                        landings_night: parseInt(document.getElementById('f-land-night').value) || 0,
+                        ifr_time: parseFloat(document.getElementById('f-ifr').value) || 0.0,
+                        night_time: parseFloat(document.getElementById('f-night').value) || 0.0,
+                        remarks: document.getElementById('f-remarks').value
+                    };
+
+                    let error;
+                    if (flightId) {
+                        const res = await supabaseClient.from('flights').update(flightData).eq('id', flightId);
+                        error = res.error;
+                    } else {
+                        const res = await supabaseClient.from('flights').insert([flightData]);
+                        error = res.error;
+                    }
+
+                    if (error) {
+                        showToast('Viga', error.message, 'warning');
+                    } else {
+                        closeNewFlightModal();
+                        document.getElementById('flight-form').reset();
+                        fetchUserData(session.user.id);
+                        showToast('Salvestatud', flightId ? 'Lend edukalt uuendatud.' : 'Lend lisatud andmebaasi.');
+                    }
+                };
+            }
+        }
+
+        async function signInWithGoogle() {
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin
+                }
+            });
+            if (error) {
+                showToast('Google sisselogimise viga', error.message, 'warning');
+            }
+        }
+
+        async function fetchUserData(userId) {
+            await Promise.all([
+                fetchFlightsFromSupabase(userId),
+                fetchPresetsFromSupabase(userId)
+            ]);
+        }
+
+        async function fetchFlightsFromSupabase(userId) {
+            const { data, error } = await supabaseClient
+                .from('flights')
+                .select('*')
+                .eq('user_id', userId)
+                .order('date', { ascending: false });
+
+            if (error) {
+                showToast('Viga', 'Lendude laadimine ebaõnnestus', 'warning');
+                return;
+            }
+
+            currentFlights = data || [];
+            renderLogbookTable(currentFlights);
+            updateStatistics(currentFlights);
+        }
+
+        async function fetchPresetsFromSupabase(userId) {
+            const { data, error } = await supabaseClient
+                .from('aircraft_presets')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('Presetide laadimise viga:', error);
+                return;
+            }
+
+            currentPresets = data || [];
+            renderPresetButtons();
+        }
+
+        function renderLogbookTable(flights) {
+            const tbody = document.getElementById('logbook-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (flights.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-slate-500">Lende ei ole veel sisestatud.</td></tr>`;
+                return;
+            }
+
+            flights.forEach((f) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-aviation-700/30 transition border-b border-aviation-700/30 font-mono-code";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-slate-300 font-sans">${f.date}</td>
+                    <td class="py-3 px-4 font-bold text-white">${f.aircraft_type || f.type} <span class="text-xs font-normal text-slate-400">(${f.aircraft_reg || f.reg})</span></td>
+                    <td class="py-3 px-4"><span class="text-aviation-accent font-bold">${f.departure_icao || f.dep}</span> <i class="fa-solid fa-arrow-right text-[10px] text-slate-500 mx-1"></i> <span class="text-aviation-warning font-bold">${f.arrival_icao || f.arr}</span></td>
+                    <td class="py-3 px-4 text-white font-bold">${Number(f.flight_time || f.time).toFixed(1)} hrs</td>
+                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-aviation-accent/10 text-aviation-accent border border-aviation-accent/20">${f.role || 'PIC'}</span></td>
+                    <td class="py-3 px-4 text-center"><span class="text-white">${f.landings_day ?? f.landDay ?? 0}</span>${(f.landings_night ?? f.landNight ?? 0) > 0 ? `<span class="text-aviation-warning ml-1">(${(f.landings_night ?? f.landNight)}N)</span>` : ''}</td>
+                    <td class="py-3 px-4 text-slate-300 text-[11px]">${(f.ifr_time || f.ifr) > 0 ? 'IFR ' + (f.ifr_time || f.ifr) + 'h' : 'VFR'}</td>
+                    <td class="py-3 px-4 text-slate-400 font-sans truncate max-w-xs">${f.remarks || '-'}</td>
+                    <td class="py-3 px-4 text-right space-x-1">
+                        <button onclick="openNewFlightModal('${f.id}')" class="text-slate-400 hover:text-aviation-accent p-1 transition" title="Muuda">
+                            <i class="fa-solid fa-pen-to-square text-xs"></i>
+                        </button>
+                        <button onclick="deleteFlight('${f.id}')" class="text-slate-400 hover:text-red-400 p-1 transition" title="Kustuta">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateStatistics(flights) {
+            let totalTime = 0, picTime = 0, ifrTime = 0, nightTime = 0, dayLandings = 0, nightLandings = 0;
+
+            flights.forEach(f => {
+                const time = Number(f.flight_time || f.time || 0);
+                totalTime += time;
+                if ((f.role || 'PIC') === 'PIC' || f.role === 'FI') picTime += time;
+                ifrTime += Number(f.ifr_time || f.ifr || 0);
+                nightTime += Number(f.night_time || f.night || 0);
+                dayLandings += Number(f.landings_day ?? f.landDay ?? 0);
+                nightLandings += Number(f.landings_night ?? f.landNight ?? 0);
+            });
+
+            if (document.getElementById('stat-total-time')) {
+                document.getElementById('stat-total-time').innerText = totalTime.toFixed(1) + ' hrs';
+                document.getElementById('stat-pic-time').innerText = picTime.toFixed(1) + ' hrs';
+                document.getElementById('stat-ifr-time').innerText = ifrTime.toFixed(1);
+                document.getElementById('stat-night-time').innerText = nightTime.toFixed(1);
+                document.getElementById('stat-day-landings').innerText = dayLandings;
+                document.getElementById('stat-night-landings').innerText = nightLandings;
+            }
+        }
+
+        async function deleteFlight(id) {
+            if (!confirm('Kas oled kindel, et soovid selle lennu kustutada?')) return;
+            const { error } = await supabaseClient.from('flights').delete().eq('id', id);
+            if (error) {
+                showToast('Viga', error.message, 'warning');
+            } else {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) fetchFlightsFromSupabase(session.user.id);
+                showToast('Kustutatud', 'Lennukanne eemaldatud.');
+            }
+        }
+
+        function filterLogbook() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const filtered = currentFlights.filter(f => 
+                (f.departure_icao || f.dep || '').toLowerCase().includes(query) ||
+                (f.arrival_icao || f.arr || '').toLowerCase().includes(query) ||
+                (f.aircraft_type || f.type || '').toLowerCase().includes(query) ||
+                (f.aircraft_reg || f.reg || '').toLowerCase().includes(query) ||
+                (f.remarks || '').toLowerCase().includes(query)
+            );
+            renderLogbookTable(filtered);
+        }
+
+        // Supabase kiirvaliku funktsioonid
+        function renderPresetButtons() {
+            const container = document.getElementById('preset-buttons-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (currentPresets.length === 0) {
+                container.innerHTML = `<span class="text-[11px] text-slate-500">Salvestatud lemmiklennukid puuduvad. Lisa esimene!</span>`;
+                return;
+            }
+
+            currentPresets.forEach((p) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = "inline-flex items-center bg-aviation-700 hover:bg-aviation-600 rounded text-slate-200 transition text-[11px] overflow-hidden border border-aviation-600";
+                
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = "px-2 py-1 text-left";
+                btn.innerHTML = `${p.aircraft_type} <span class="text-slate-400">(${p.aircraft_reg})</span>`;
+                btn.onclick = () => setPresetAircraft(p.aircraft_type, p.aircraft_reg);
+
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = "px-1.5 py-1 text-slate-400 hover:text-red-400 hover:bg-aviation-800/50 transition border-l border-aviation-600";
+                delBtn.innerHTML = '<i class="fa-solid fa-xmark text-[10px]"></i>';
+                delBtn.title = "Kustuta kiirvalik";
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removePreset(p.id);
+                };
+
+                wrapper.appendChild(btn);
+                wrapper.appendChild(delBtn);
+                container.appendChild(wrapper);
+            });
+        }
+
+        function setPresetAircraft(type, reg) {
+            document.getElementById('f-type').value = type;
+            document.getElementById('f-reg').value = reg;
+        }
+
+        function toggleAddPresetForm() {
+            const box = document.getElementById('add-preset-box');
+            box.classList.toggle('hidden');
+        }
+
+        async function saveNewPreset() {
+            const type = document.getElementById('new-preset-type').value.trim().toUpperCase();
+            const reg = document.getElementById('new-preset-reg').value.trim().toUpperCase();
+
+            if (!type || !reg) {
+                showToast('Viga', 'Palun sisesta nii lennuki tüüp kui ka registrinumber.', 'warning');
+                return;
+            }
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+
+            const { error } = await supabaseClient.from('aircraft_presets').insert([{
+                user_id: session.user.id,
+                aircraft_type: type,
+                aircraft_reg: reg
+            }]);
+
+            if (error) {
+                showToast('Viga', error.message, 'warning');
+            } else {
+                document.getElementById('new-preset-type').value = '';
+                document.getElementById('new-preset-reg').value = '';
+                toggleAddPresetForm();
+                fetchPresetsFromSupabase(session.user.id);
+                showToast('Kiirvalik', 'Uus lemmiklennuk salvestatud pilve!');
+            }
+        }
+
+        async function removePreset(id) {
+            const { error } = await supabaseClient.from('aircraft_presets').delete().eq('id', id);
+            if (error) {
+                showToast('Viga', error.message, 'warning');
+            } else {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) fetchPresetsFromSupabase(session.user.id);
+                showToast('Kiirvalik', 'Lennuk eemaldatud kiirvalikust.', 'warning');
+            }
+        }
+
+        function openNewFlightModal(flightId = null) {
+            const modal = document.getElementById('flight-modal');
+            const form = document.getElementById('flight-form');
+            const modalTitle = document.getElementById('modal-title');
+            form.reset();
+            document.getElementById('f-id').value = '';
+            document.getElementById('f-date').valueAsDate = new Date();
+            document.getElementById('f-land-day').value = '1';
+            document.getElementById('f-land-night').value = '0';
+            document.getElementById('f-ifr').value = '0.0';
+            document.getElementById('f-night').value = '0.0';
+            
+            renderPresetButtons();
+            document.getElementById('add-preset-box').classList.add('hidden');
+
+            if (flightId) {
+                modalTitle.innerHTML = `<i class="fa-solid fa-pen-to-square text-aviation-accent"></i> Muuda lennukannet`;
+                const flight = currentFlights.find(f => f.id === flightId);
+                if (flight) {
+                    document.getElementById('f-id').value = flight.id;
+                    document.getElementById('f-date').value = flight.date;
+                    document.getElementById('f-type').value = flight.aircraft_type || flight.type || '';
+                    document.getElementById('f-reg').value = flight.aircraft_reg || flight.reg || '';
+                    document.getElementById('f-dep').value = flight.departure_icao || flight.dep || '';
+                    document.getElementById('f-arr').value = flight.arrival_icao || flight.arr || '';
+                    document.getElementById('f-time').value = flight.flight_time || flight.time || '';
+                    document.getElementById('f-role').value = flight.role || 'PIC';
+                    document.getElementById('f-land-day').value = flight.landings_day ?? flight.landDay ?? 1;
+                    document.getElementById('f-land-night').value = flight.landings_night ?? flight.landNight ?? 0;
+                    document.getElementById('f-ifr').value = flight.ifr_time || flight.ifr || 0;
+                    document.getElementById('f-night').value = flight.night_time || flight.night || 0;
+                    document.getElementById('f-remarks').value = flight.remarks || '';
+                }
+            } else {
+                modalTitle.innerHTML = `<i class="fa-solid fa-plane-circle-check text-aviation-accent"></i> Lisa uus lend`;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeNewFlightModal() { 
+            document.getElementById('flight-modal').classList.add('hidden'); 
+        }
+
+        let telemetryInterval = null;
+
+        async function toggleSimConnection() {
+            const banner = document.getElementById('telemetry-banner');
+            const badge = document.getElementById('sim-status-badge');
+            const indicator = document.getElementById('sim-indicator');
+            const simText = document.getElementById('sim-text');
+            const connectBtnText = document.getElementById('connect-btn-text');
+            const connectBtn = document.getElementById('connect-sim-btn');
+
+            if (!isSimConnected) {
+                try {
+                    const response = await fetch('http://localhost:3000/');
+                    if (!response.ok) throw new Error('Server ei vasta');
+                    
+                    const result = await response.json();
+                    
+                    isSimConnected = true;
+                    banner.classList.remove('hidden');
+                    badge.classList.remove('hidden');
+                    indicator.className = "w-2.5 h-2.5 rounded-full bg-aviation-success animate-ping";
+                    simText.innerText = `MSFS Ühendatud (${result.sim})`;
+                    connectBtnText.innerText = "Katkesta simulaator";
+                    connectBtn.classList.add('border-aviation-success', 'bg-aviation-success/10');
+                    showToast('SimConnect', 'Ühendatud lokaalse MSFS sillaga!');
+
+                    telemetryInterval = setInterval(async () => {
+                        try {
+                            const res = await fetch('http://localhost:3000/');
+                            const data = await res.json();
+                            if (data && data.telemetry) {
+                                document.getElementById('tel-alt').innerText = Math.round(data.telemetry.altitude) + ' ft';
+                                document.getElementById('tel-gs').innerText = Math.round(data.telemetry.speed) + ' kts';
+                                document.getElementById('tel-hdg').innerText = Math.round(data.telemetry.heading) + '°';
+                            }
+                        } catch (e) {
+                            console.error('Telemeetria viga:', e);
+                        }
+                    }, 1000);
+                    
+                } catch (err) {
+                    showToast('Ühenduse viga', 'Ei leitud kohalikku silda! Veendu, et käivitasid käsu "node index.js".', 'warning');
+                    console.error(err);
+                }
+            } else {
+                isSimConnected = false;
+                clearInterval(telemetryInterval);
+                banner.classList.add('hidden');
+                badge.classList.add('hidden');
+                indicator.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+                simText.innerText = "MSFS Offline";
+                connectBtnText.innerText = "Ühenda SimConnect";
+                connectBtn.classList.remove('border-aviation-success', 'bg-aviation-success/10');
+                showToast('SimConnect', 'Ühendus katkestatud.', 'warning');
+            }
+        }
+
+        function exportLogbook() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentFlights, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `aerologis_logbook.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Eksport', 'Andmed laaditud JSON failina.');
+        }
+
+        function showToast(title, msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-msg').innerText = msg;
+            const icon = document.getElementById('toast-icon');
+            icon.className = type === 'warning' ? "fa-solid fa-triangle-exclamation text-aviation-warning text-lg" : "fa-solid fa-circle-check text-aviation-success text-lg";
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-24', 'opacity-0'), 3500);
+        }
+    </script>
+</body>
+</html>
