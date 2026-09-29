@@ -79,7 +79,7 @@
             <form id="flight-form" class="p-6 space-y-4 overflow-y-auto flex-1">
                 <input type="hidden" id="f-id">
                 
-                <!-- MSFS Andmete sissetoomise nupp (Valikuline) -->
+                <!-- MSFS Andmete sissetoomise nupp -->
                 <div class="bg-aviation-900/60 p-3 rounded-xl border border-aviation-accent/30 flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                         <i class="fa-solid fa-wand-magic-sparkles text-aviation-accent"></i>
@@ -166,10 +166,14 @@
                 </div>
 
                 <!-- Kütuse väljad -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-aviation-900/60 p-3 rounded-xl border border-aviation-700/50">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-aviation-900/60 p-3 rounded-xl border border-aviation-700/50">
                     <div>
                         <label class="block text-[11px] font-medium text-slate-300 mb-1">KÜTUS ALGUSES</label>
                         <input type="number" step="0.1" id="f-fuel-start" placeholder="nt 44.0" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-aviation-warning mb-1"><i class="fa-solid fa-gas-pump"></i> TANKITUD (+)</label>
+                        <input type="number" step="0.1" id="f-fuel-added" placeholder="nt 20.0" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white font-mono-code">
                     </div>
                     <div>
                         <label class="block text-[11px] font-medium text-slate-300 mb-1">KÜTUS LÕPUS</label>
@@ -234,6 +238,7 @@
         let currentPresets = [];
         let isSimConnected = false;
         let telemetryInterval = null;
+        let lastFlightEndFuel = null;
 
         window.onload = async function() {
             const dateField = document.getElementById('f-date');
@@ -317,10 +322,13 @@
 
             } else {
                 headerActions.innerHTML = `
-                    <div id="sim-status-badge" class="flex items-center space-x-2 bg-aviation-900/80 px-3 py-1.5 rounded-full border border-aviation-700 text-xs font-medium">
+                    <div id="sim-status-badge" class="hidden sm:flex items-center space-x-2 bg-aviation-900/80 px-3 py-1.5 rounded-full border border-aviation-700 text-xs font-medium">
                         <span id="sim-indicator" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
                         <span id="sim-text" class="text-slate-300">MSFS Kontrollin...</span>
                     </div>
+                    <button onclick="startNewSessionDirectly()" class="bg-aviation-700 hover:bg-aviation-600 text-aviation-warning text-xs px-3 py-2 rounded-lg font-medium transition border border-aviation-warning/30 flex items-center gap-1.5 shadow" title="Alusta simulaatoris uut otsa: seab uue OFFBLOCK aja ja toob eelmise kütuse kaasa">
+                        <i class="fa-solid fa-rotate-right"></i> <span class="hidden md:inline">Uus ots (</span>Nulli seanss<span class="hidden md:inline">)</span>
+                    </button>
                     <button onclick="openNewFlightModal()" class="bg-aviation-accent hover:bg-sky-400 text-aviation-900 text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg shadow-aviation-accent/10">
                         <i class="fa-solid fa-plus"></i> Lisa lend
                     </button>
@@ -429,7 +437,7 @@
                                         <th class="py-3 px-4">Lennuaeg (Reaalne)</th>
                                         <th class="py-3 px-4">Blokiaeg (Block)</th>
                                         <th class="py-3 px-4">Kellaajad (Off/On)</th>
-                                        <th class="py-3 px-4">Kütus (Alg/Lõpp)</th>
+                                        <th class="py-3 px-4">Kütus (Alg/Tank/Lõpp)</th>
                                         <th class="py-3 px-4">Roll</th>
                                         <th class="py-3 px-4 text-center">Maand.</th>
                                         <th class="py-3 px-4">Märkmed</th>
@@ -456,6 +464,11 @@
                         return val ? val + ':00' : null;
                     };
 
+                    const endFuelVal = parseFloat(document.getElementById('f-fuel-end').value) || null;
+                    if (endFuelVal !== null) {
+                        lastFlightEndFuel = endFuelVal;
+                    }
+
                     const flightData = {
                         user_id: session.user.id,
                         date: document.getElementById('f-date').value,
@@ -470,7 +483,8 @@
                         landing: getLocalDateTime('f-landing'),
                         onblock: getLocalDateTime('f-onblock'),
                         fuel_start: parseFloat(document.getElementById('f-fuel-start').value) || null,
-                        fuel_end: parseFloat(document.getElementById('f-fuel-end').value) || null,
+                        fuel_added: parseFloat(document.getElementById('f-fuel-added').value) || 0,
+                        fuel_end: endFuelVal,
                         role: document.getElementById('f-role').value,
                         landings_day: parseInt(document.getElementById('f-land-day').value) || 0,
                         landings_night: parseInt(document.getElementById('f-land-night').value) || 0,
@@ -569,7 +583,11 @@
                 const offStr = formatTimeShort(f.offblock);
                 const onStr = formatTimeShort(f.onblock);
                 const timesDisplay = (f.offblock || f.onblock) ? `${offStr} / ${onStr}` : '-';
-                const fuelDisplay = (f.fuel_start !== null && f.fuel_end !== null) ? `${f.fuel_start} / ${f.fuel_end}` : '-';
+                
+                const fuelAddedVal = Number(f.fuel_added || 0);
+                const fuelDisplay = (f.fuel_start !== null && f.fuel_end !== null) 
+                    ? `${f.fuel_start} ${fuelAddedVal > 0 ? `<span class="text-aviation-warning font-bold">(+${fuelAddedVal})</span>` : ''} / ${f.fuel_end}` 
+                    : '-';
 
                 tr.innerHTML = `
                     <td class="py-3 px-4 text-slate-300 font-sans">${f.date}</td>
@@ -747,6 +765,11 @@
             document.getElementById('f-land-night').value = '0';
             document.getElementById('f-ifr').value = '0.0';
             document.getElementById('f-night').value = '0.0';
+            document.getElementById('f-fuel-added').value = '0';
+
+            if (lastFlightEndFuel !== null && !flightId) {
+                document.getElementById('f-fuel-start').value = lastFlightEndFuel;
+            }
             
             renderPresetButtons();
             document.getElementById('add-preset-box').classList.add('hidden');
@@ -770,6 +793,7 @@
                     document.getElementById('f-onblock').value = flight.onblock ? flight.onblock.substring(0, 16) : '';
                     
                     document.getElementById('f-fuel-start').value = flight.fuel_start ?? flight.fuelStart ?? '';
+                    document.getElementById('f-fuel-added').value = flight.fuel_added ?? 0;
                     document.getElementById('f-fuel-end').value = flight.fuel_end ?? flight.fuelEnd ?? '';
                     document.getElementById('f-role').value = flight.role || 'PIC';
                     document.getElementById('f-land-day').value = flight.landings_day ?? flight.landDay ?? 1;
@@ -782,6 +806,52 @@
                 modalTitle.innerHTML = `<i class="fa-solid fa-plane-circle-check text-aviation-accent"></i> Lisa uus lend`;
             }
             modal.classList.remove('hidden');
+        }
+
+        // Uus ots pealehelt: seab uue OFFBLOCK aja, toob kütuse ja saadab andmed ka sillale
+        async function startNewSessionDirectly() {
+            openNewFlightModal();
+
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const formattedCurrentTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            
+            document.getElementById('f-offblock').value = formattedCurrentTime;
+
+            if (lastFlightEndFuel !== null) {
+                document.getElementById('f-fuel-start').value = lastFlightEndFuel;
+            }
+
+            if (isSimConnected) {
+                const resetPayload = {
+                    telemetry: {
+                        offblockTime: formattedCurrentTime + ':00',
+                        fuelStart: lastFlightEndFuel !== null ? lastFlightEndFuel : undefined,
+                        takeoffTime: null,
+                        landingTime: null,
+                        onblockTime: null,
+                        fuelEnd: null
+                    }
+                };
+
+                try {
+                    await fetch('http://localhost:3000/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(resetPayload),
+                        signal: AbortSignal.timeout(1500)
+                    });
+                    showToast('Uus ots & Sild', 'Uus seanss alustatud ja saadetud ka simulaatori sillale.');
+                } catch (err) {
+                    showToast('Uus ots', 'OFFBLOCK seatud (sild ei vastanud, andmed vormis valmis).', 'warning');
+                }
+            } else {
+                showToast('Uus ots', 'Uus seanss alustatud: OFFBLOCK seatud praegusele ajale, vana kütus kaasas.');
+            }
         }
 
         function closeNewFlightModal() { 
@@ -809,7 +879,12 @@
                     if (t.landingTime) document.getElementById('f-landing').value = t.landingTime.slice(0, 16);
                     if (t.onblockTime) document.getElementById('f-onblock').value = t.onblockTime.slice(0, 16);
                     
-                    if (t.fuelStart !== undefined && t.fuelStart !== null) document.getElementById('f-fuel-start').value = t.fuelStart;
+                    if (t.fuelStart !== undefined && t.fuelStart !== null) {
+                        document.getElementById('f-fuel-start').value = t.fuelStart;
+                    } else if (lastFlightEndFuel !== null) {
+                        document.getElementById('f-fuel-start').value = lastFlightEndFuel;
+                    }
+
                     if (t.fuelEnd !== undefined && t.fuelEnd !== null) document.getElementById('f-fuel-end').value = t.fuelEnd;
 
                     calculateTimesFromClock();
@@ -821,7 +896,7 @@
         }
 
         async function sendManualOverrideToSim() {
-            if (!isSimConnected) return; // Kui sild pole ühendatud, ära üldse proovi saata
+            if (!isSimConnected) return;
             
             const telemetryData = {
                 telemetry: {
@@ -844,7 +919,7 @@
                     signal: AbortSignal.timeout(1000)
                 });
             } catch (err) {
-                // Summutame vea, et see ei segaks
+                // Summutatud
             }
         }
 
