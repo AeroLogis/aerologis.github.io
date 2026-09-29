@@ -822,30 +822,34 @@
             }
         }
 
-        async function sendManualOverrideToSim() {
-            const telemetryData = {
-                telemetry: {
-                    aircraftType: document.getElementById('f-type').value,
-                    aircraftReg: document.getElementById('f-reg').value,
-                    offblockTime: document.getElementById('f-offblock').value ? document.getElementById('f-offblock').value + ':00' : null,
-                    takeoffTime: document.getElementById('f-takeoff').value ? document.getElementById('f-takeoff').value + ':00' : null,
-                    landingTime: document.getElementById('f-landing').value ? document.getElementById('f-landing').value + ':00' : null,
-                    onblockTime: document.getElementById('f-onblock').value ? document.getElementById('f-onblock').value + ':00' : null,
-                    fuelStart: parseFloat(document.getElementById('f-fuel-start').value) || null,
-                    fuelEnd: parseFloat(document.getElementById('f-fuel-end').value) || null
-                }
-            };
-
-            try {
-                await fetch('http://localhost:3000/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(telemetryData)
-                });
-            } catch (err) {
-                console.log("Simulaatori sild ei ole aktiivne – andmed salvestati ainult pilveandmebaasi.");
-            }
+       async function sendManualOverrideToSim() {
+    const telemetryData = {
+        telemetry: {
+            aircraftType: document.getElementById('f-type').value,
+            aircraftReg: document.getElementById('f-reg').value,
+            offblockTime: document.getElementById('f-offblock').value ? document.getElementById('f-offblock').value + ':00' : null,
+            takeoffTime: document.getElementById('f-takeoff').value ? document.getElementById('f-takeoff').value + ':00' : null,
+            landingTime: document.getElementById('f-landing').value ? document.getElementById('f-landing').value + ':00' : null,
+            onblockTime: document.getElementById('f-onblock').value ? document.getElementById('f-onblock').value + ':00' : null,
+            fuelStart: parseFloat(document.getElementById('f-fuel-start').value) || null,
+            fuelEnd: parseFloat(document.getElementById('f-fuel-end').value) || null
         }
+    };
+
+    try {
+        // Proovime saata andmed ainult siis, kui kohalik sild on eelnevalt tuvastatud online'iks
+        if (typeof isSimConnected !== 'undefined' && isSimConnected) {
+            await fetch('http://localhost:3000/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(telemetryData),
+                signal: AbortSignal.timeout(1000) // Katkestab kiiresti, kui sild ei vasta
+            });
+        }
+    } catch (err) {
+        // Ignoreerime vaikselt – kui silda pole või see ei vasta, siis ei tee midagi ja konsool jääb puhtaks
+    }
+}
 
         async function autoStartSimTelemetry() {
             const indicator = document.getElementById('sim-indicator');
