@@ -65,7 +65,7 @@
         <div class="p-8 text-center text-slate-400">Laen rakendust...</div>
     </main>
 
-    <!-- Uue lennu / muutmise modaal (laiendatud: max-w-4xl) -->
+    <!-- Uue lennu / muutmise modaal -->
     <div id="flight-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-aviation-800 border border-aviation-700 rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
             <div class="px-6 py-4 border-b border-aviation-700 flex items-center justify-between bg-aviation-900/50">
@@ -79,11 +79,11 @@
             <form id="flight-form" class="p-6 space-y-4 overflow-y-auto flex-1">
                 <input type="hidden" id="f-id">
                 
-                <!-- MSFS Andmete sissetoomise nupp -->
+                <!-- MSFS Andmete sissetoomise nupp (Valikuline) -->
                 <div class="bg-aviation-900/60 p-3 rounded-xl border border-aviation-accent/30 flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                         <i class="fa-solid fa-wand-magic-sparkles text-aviation-accent"></i>
-                        <span class="text-xs font-medium text-slate-200">MSFS Live Andmed</span>
+                        <span class="text-xs font-medium text-slate-200">MSFS Live Andmed (valikuline)</span>
                     </div>
                     <button type="button" onclick="fillFlightFromSim()" class="bg-aviation-600 hover:bg-aviation-500 text-aviation-accent text-xs px-3 py-1.5 rounded-lg font-bold transition border border-aviation-accent/30 flex items-center gap-1.5 shadow">
                         <i class="fa-solid fa-download"></i> Täida andmed simulaatorist
@@ -105,7 +105,7 @@
                     </div>
                 </div>
 
-                <!-- Kiirvalik ja haldus Supabase baasil -->
+                <!-- Lemmiklennukite kiirvalik -->
                 <div class="bg-aviation-900/40 p-3 rounded-xl border border-aviation-700/50 space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-medium text-slate-300 flex items-center gap-1.5">
@@ -136,53 +136,57 @@
                         <input type="text" id="f-arr" placeholder="EFHK" maxlength="4" required class="w-full uppercase bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white font-mono-code focus:outline-none focus:border-aviation-accent">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Lennuaeg (h)</label>
-                        <input type="number" step="0.1" id="f-time" placeholder="1.5" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white font-mono-code focus:outline-none focus:border-aviation-accent">
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Reaalne lennuaeg (h)</label>
+                        <input type="number" step="0.1" id="f-time" placeholder="1.5" required class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white font-mono-code focus:outline-none focus:border-aviation-accent">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Piloodi roll</label>
-                        <select id="f-role" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-aviation-accent">
-                            <option value="PIC">PIC (Pilot in Command)</option>
-                            <option value="DUAL">Dual / Õpilane</option>
-                            <option value="COPILOT">Co-Pilot / SIC</option>
-                            <option value="FI">Lennuinstruktor</option>
-                        </select>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Blokiaeg (Block Time, h)</label>
+                        <input type="number" step="0.1" id="f-block-time" placeholder="1.7" required class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-2 text-xs text-white font-mono-code focus:outline-none focus:border-aviation-accent">
                     </div>
                 </div>
 
-                <!-- Aja väljad (2 veeruga, et mahuksid lahedalt ära) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-aviation-900/60 p-3 rounded-xl border border-aviation-700/50">
+                <!-- Aja väljad (Kellaajad) -->
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-aviation-900/60 p-3 rounded-xl border border-aviation-700/50">
                     <div>
                         <label class="block text-[11px] font-medium text-slate-300 mb-1">OFFBLOCK</label>
-                        <input type="datetime-local" id="f-offblock" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                        <input type="datetime-local" id="f-offblock" onchange="calculateTimesFromClock()" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
                     </div>
                     <div>
                         <label class="block text-[11px] font-medium text-slate-300 mb-1">TAKEOFF</label>
-                        <input type="datetime-local" id="f-takeoff" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                        <input type="datetime-local" id="f-takeoff" onchange="calculateTimesFromClock()" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
                     </div>
                     <div>
                         <label class="block text-[11px] font-medium text-slate-300 mb-1">LANDING</label>
-                        <input type="datetime-local" id="f-landing" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                        <input type="datetime-local" id="f-landing" onchange="calculateTimesFromClock()" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
                     </div>
                     <div>
                         <label class="block text-[11px] font-medium text-slate-300 mb-1">ONBLOCK</label>
-                        <input type="datetime-local" id="f-onblock" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                        <input type="datetime-local" id="f-onblock" onchange="calculateTimesFromClock()" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
                     </div>
                 </div>
 
                 <!-- Kütuse väljad -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-aviation-900/60 p-3 rounded-xl border border-aviation-700/50">
                     <div>
-                        <label class="block text-[11px] font-medium text-slate-300 mb-1">KÜTUS ALGUSES (gal)</label>
-                        <input type="number" step="0.1" id="f-fuel-start" placeholder="nt 40.0" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">KÜTUS ALGUSES</label>
+                        <input type="number" step="0.1" id="f-fuel-start" placeholder="nt 44.0" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
                     </div>
                     <div>
-                        <label class="block text-[11px] font-medium text-slate-300 mb-1">KÜTUS LÕPUS (gal)</label>
+                        <label class="block text-[11px] font-medium text-slate-300 mb-1">KÜTUS LÕPUS</label>
                         <input type="number" step="0.1" id="f-fuel-end" placeholder="nt 28.5" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white">
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-aviation-900/40 p-3 rounded-xl border border-aviation-700/50">
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-4 bg-aviation-900/40 p-3 rounded-xl border border-aviation-700/50">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Piloodi roll</label>
+                        <select id="f-role" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-aviation-accent">
+                            <option value="PIC">PIC</option>
+                            <option value="DUAL">Dual</option>
+                            <option value="COPILOT">Co-Pilot</option>
+                            <option value="FI">Instruktor</option>
+                        </select>
+                    </div>
                     <div>
                         <label class="block text-[11px] font-medium text-slate-400 mb-1">Päevased maand.</label>
                         <input type="number" id="f-land-day" value="1" min="0" class="w-full bg-aviation-900 border border-aviation-700 rounded-lg px-3 py-1.5 text-xs text-white">
@@ -229,6 +233,7 @@
         let currentFlights = [];
         let currentPresets = [];
         let isSimConnected = false;
+        let telemetryInterval = null;
 
         window.onload = async function() {
             const dateField = document.getElementById('f-date');
@@ -312,14 +317,10 @@
 
             } else {
                 headerActions.innerHTML = `
-                    <div id="sim-status-badge" class="hidden sm:flex items-center space-x-2 bg-aviation-900/80 px-3 py-1.5 rounded-full border border-aviation-700 text-xs font-medium">
+                    <div id="sim-status-badge" class="flex items-center space-x-2 bg-aviation-900/80 px-3 py-1.5 rounded-full border border-aviation-700 text-xs font-medium">
                         <span id="sim-indicator" class="w-2.5 h-2.5 rounded-full bg-slate-500 animate-pulse"></span>
-                        <span id="sim-text" class="text-slate-300">MSFS Offline</span>
+                        <span id="sim-text" class="text-slate-300">MSFS Kontrollin...</span>
                     </div>
-                    <button onclick="toggleSimConnection()" id="connect-sim-btn" class="bg-aviation-700 hover:bg-aviation-600 text-xs px-3.5 py-2 rounded-lg font-medium transition border border-aviation-accent/20 flex items-center gap-2 shadow">
-                        <i class="fa-solid fa-satellite-dish text-aviation-accent"></i>
-                        <span id="connect-btn-text">Ühenda SimConnect</span>
-                    </button>
                     <button onclick="openNewFlightModal()" class="bg-aviation-accent hover:bg-sky-400 text-aviation-900 text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg shadow-aviation-accent/10">
                         <i class="fa-solid fa-plus"></i> Lisa lend
                     </button>
@@ -327,39 +328,40 @@
                 `;
 
                 document.getElementById('logout-btn').addEventListener('click', async () => {
+                    if (telemetryInterval) clearInterval(telemetryInterval);
                     await supabaseClient.auth.signOut();
                 });
 
                 appContainer.innerHTML = `
-                    <div id="telemetry-banner" class="hidden bg-gradient-to-r from-aviation-800 to-aviation-700 border border-aviation-accent/30 rounded-xl p-4 shadow-xl">
+                    <div id="telemetry-banner" class="bg-gradient-to-r from-aviation-800 to-aviation-700 border border-aviation-accent/30 rounded-xl p-4 shadow-xl">
                         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div class="flex items-center space-x-3">
                                 <div class="p-3 bg-aviation-accent/10 rounded-lg border border-aviation-accent/20 text-aviation-accent">
-                                    <i class="fa-solid fa-tower-broadcast text-xl animate-bounce"></i>
+                                    <i class="fa-solid fa-tower-broadcast text-xl"></i>
                                 </div>
                                 <div>
                                     <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                                        MSFS 2024 Telemeetria aktiivne <span class="text-[10px] bg-aviation-success/20 text-aviation-success px-2 py-0.5 rounded">LIVE</span>
+                                        MSFS 2024 Sild <span id="sim-live-tag" class="text-[10px] bg-slate-600 text-slate-300 px-2 py-0.5 rounded">OFFLINE</span>
                                     </h3>
-                                    <p id="telemetry-route" class="text-xs text-slate-300">Lennuk: Cessna 172 Skyhawk</p>
+                                    <p id="telemetry-route" class="text-xs text-slate-300">Simulaatori sild on valikuline (töötab ka ilma selleta)</p>
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                                 <div class="bg-aviation-900/60 px-3 py-1.5 rounded border border-aviation-700/50">
                                     <div class="text-[10px] text-slate-400 uppercase">Kõrgus</div>
-                                    <div id="tel-alt" class="text-sm font-mono-code font-bold text-aviation-accent">4,500 ft</div>
+                                    <div id="tel-alt" class="text-sm font-mono-code font-bold text-aviation-accent">0 ft</div>
                                 </div>
                                 <div class="bg-aviation-900/60 px-3 py-1.5 rounded border border-aviation-700/50">
                                     <div class="text-[10px] text-slate-400 uppercase">Kiirus</div>
-                                    <div id="tel-gs" class="text-sm font-mono-code font-bold text-white">118 kts</div>
+                                    <div id="tel-gs" class="text-sm font-mono-code font-bold text-white">0 kts</div>
                                 </div>
                                 <div class="bg-aviation-900/60 px-3 py-1.5 rounded border border-aviation-700/50">
                                     <div class="text-[10px] text-slate-400 uppercase">Kurss</div>
-                                    <div id="tel-hdg" class="text-sm font-mono-code font-bold text-white">245°</div>
+                                    <div id="tel-hdg" class="text-sm font-mono-code font-bold text-white">0°</div>
                                 </div>
                                 <div class="bg-aviation-900/60 px-3 py-1.5 rounded border border-aviation-700/50">
-                                    <div class="text-[10px] text-slate-400 uppercase">Aeg</div>
-                                    <div id="tel-time" class="text-sm font-mono-code font-bold text-aviation-warning">01:14</div>
+                                    <div class="text-[10px] text-slate-400 uppercase">Aeg (Seanss)</div>
+                                    <div id="tel-time" class="text-sm font-mono-code font-bold text-aviation-warning">00:00</div>
                                 </div>
                             </div>
                         </div>
@@ -400,7 +402,7 @@
                         <div class="p-4 sm:p-5 border-b border-aviation-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>
                                 <h2 class="font-bold text-white text-base flex items-center gap-2">
-                                    <i class="fa-solid fa-book-open text-aviation-accent"></i> Lennukanded (${session.user.email || session.user.user_metadata?.full_name || 'Google Kasutaja'})
+                                    <i class="fa-solid fa-book-open text-aviation-accent"></i> Lennukanded (${session.user.email || session.user.user_metadata?.full_name || 'Kasutaja'})
                                 </h2>
                                 <p class="text-xs text-slate-400">EASA / FAA nõuetele vastav lennupäevik</p>
                             </div>
@@ -424,8 +426,9 @@
                                         <th class="py-3 px-4">Kuupäev</th>
                                         <th class="py-3 px-4">Lennuk</th>
                                         <th class="py-3 px-4">Marsruut</th>
-                                        <th class="py-3 px-4">Aeg</th>
-                                        <th class="py-3 px-4">Blokiajad (Off/On)</th>
+                                        <th class="py-3 px-4">Lennuaeg (Reaalne)</th>
+                                        <th class="py-3 px-4">Blokiaeg (Block)</th>
+                                        <th class="py-3 px-4">Kellaajad (Off/On)</th>
                                         <th class="py-3 px-4">Kütus (Alg/Lõpp)</th>
                                         <th class="py-3 px-4">Roll</th>
                                         <th class="py-3 px-4 text-center">Maand.</th>
@@ -434,7 +437,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="logbook-table-body" class="divide-y divide-aviation-700/50 text-slate-200">
-                                    <tr><td colspan="10" class="text-center py-8 text-slate-500">Laen andmeid...</td></tr>
+                                    <tr><td colspan="11" class="text-center py-8 text-slate-500">Laen andmeid...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -442,10 +445,17 @@
                 `;
 
                 fetchUserData(session.user.id);
+                autoStartSimTelemetry();
 
                 document.getElementById('flight-form').onsubmit = async (e) => {
                     e.preventDefault();
                     const flightId = document.getElementById('f-id').value;
+                    
+                    const getLocalDateTime = (id) => {
+                        const val = document.getElementById(id).value;
+                        return val ? val + ':00' : null;
+                    };
+
                     const flightData = {
                         user_id: session.user.id,
                         date: document.getElementById('f-date').value,
@@ -453,11 +463,12 @@
                         aircraft_reg: document.getElementById('f-reg').value.toUpperCase(),
                         departure_icao: document.getElementById('f-dep').value.toUpperCase(),
                         arrival_icao: document.getElementById('f-arr').value.toUpperCase(),
-                        flight_time: parseFloat(document.getElementById('f-time').value)|| 0.1,
-                        offblock: document.getElementById('f-offblock').value || null,
-                        takeoff: document.getElementById('f-takeoff').value || null,
-                        landing: document.getElementById('f-landing').value || null,
-                        onblock: document.getElementById('f-onblock').value || null,
+                        flight_time: parseFloat(document.getElementById('f-time').value) || 0.0,
+                        block_time: parseFloat(document.getElementById('f-block-time').value) || 0.0,
+                        offblock: getLocalDateTime('f-offblock'),
+                        takeoff: getLocalDateTime('f-takeoff'),
+                        landing: getLocalDateTime('f-landing'),
+                        onblock: getLocalDateTime('f-onblock'),
                         fuel_start: parseFloat(document.getElementById('f-fuel-start').value) || null,
                         fuel_end: parseFloat(document.getElementById('f-fuel-end').value) || null,
                         role: document.getElementById('f-role').value,
@@ -469,7 +480,7 @@
                     };
 
                     let error;
-                    if (flightId) {
+                    if (flightId && flightId.trim() !== "") {
                         const res = await supabaseClient.from('flights').update(flightData).eq('id', flightId);
                         error = res.error;
                     } else {
@@ -478,8 +489,9 @@
                     }
 
                     if (error) {
-                        showToast('Viga', error.message, 'warning');
+                        showToast('Viga salvestamisel', error.message, 'warning');
                     } else {
+                        await sendManualOverrideToSim();
                         closeNewFlightModal();
                         document.getElementById('flight-form').reset();
                         fetchUserData(session.user.id);
@@ -492,13 +504,9 @@
         async function signInWithGoogle() {
             const { error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
-                options: {
-                    redirectTo: window.location.origin
-                }
+                options: { redirectTo: window.location.origin }
             });
-            if (error) {
-                showToast('Google sisselogimise viga', error.message, 'warning');
-            }
+            if (error) showToast('Google sisselogimise viga', error.message, 'warning');
         }
 
         async function fetchUserData(userId) {
@@ -532,19 +540,16 @@
                 .eq('user_id', userId)
                 .order('created_at', { ascending: true });
 
-            if (error) {
-                console.error('Presetide laadimise viga:', error);
-                return;
-            }
-
+            if (error) return;
             currentPresets = data || [];
             renderPresetButtons();
         }
 
         function formatTimeShort(isoString) {
             if (!isoString) return '-';
-            const date = new Date(isoString);
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const parts = isoString.split('T');
+            if (parts.length < 2) return '-';
+            return parts[1].substring(0, 5);
         }
 
         function renderLogbookTable(flights) {
@@ -553,7 +558,7 @@
             tbody.innerHTML = '';
 
             if (flights.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-500">Lende ei ole veel sisestatud.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-500">Lende ei ole veel sisestatud.</td></tr>`;
                 return;
             }
 
@@ -563,15 +568,16 @@
                 
                 const offStr = formatTimeShort(f.offblock);
                 const onStr = formatTimeShort(f.onblock);
-                const blockDisplay = (f.offblock || f.onblock) ? `${offStr} / ${onStr}` : '-';
-                const fuelDisplay = (f.fuel_start !== null && f.fuel_end !== null) ? `${f.fuel_start} / ${f.fuel_end} gal` : '-';
+                const timesDisplay = (f.offblock || f.onblock) ? `${offStr} / ${onStr}` : '-';
+                const fuelDisplay = (f.fuel_start !== null && f.fuel_end !== null) ? `${f.fuel_start} / ${f.fuel_end}` : '-';
 
                 tr.innerHTML = `
                     <td class="py-3 px-4 text-slate-300 font-sans">${f.date}</td>
                     <td class="py-3 px-4 font-bold text-white">${f.aircraft_type || f.type} <span class="text-xs font-normal text-slate-400">(${f.aircraft_reg || f.reg})</span></td>
                     <td class="py-3 px-4"><span class="text-aviation-accent font-bold">${f.departure_icao || f.dep}</span> <i class="fa-solid fa-arrow-right text-[10px] text-slate-500 mx-1"></i> <span class="text-aviation-warning font-bold">${f.arrival_icao || f.arr}</span></td>
-                    <td class="py-3 px-4 text-white font-bold">${Number(f.flight_time || f.time).toFixed(1)} hrs</td>
-                    <td class="py-3 px-4 text-slate-300 text-[11px]">${blockDisplay}</td>
+                    <td class="py-3 px-4 text-white font-bold">${Number(f.flight_time || f.time || 0).toFixed(1)} hrs</td>
+                    <td class="py-3 px-4 text-aviation-accent font-bold">${Number(f.block_time || 0).toFixed(1)} hrs</td>
+                    <td class="py-3 px-4 text-slate-300 text-[11px]">${timesDisplay}</td>
                     <td class="py-3 px-4 text-slate-300 text-[11px]">${fuelDisplay}</td>
                     <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-aviation-accent/10 text-aviation-accent border border-aviation-accent/20">${f.role || 'PIC'}</span></td>
                     <td class="py-3 px-4 text-center"><span class="text-white">${f.landings_day ?? f.landDay ?? 0}</span>${(f.landings_night ?? f.landNight ?? 0) > 0 ? `<span class="text-aviation-warning ml-1">(${(f.landings_night ?? f.landNight)}N)</span>` : ''}</td>
@@ -609,6 +615,31 @@
                 document.getElementById('stat-night-time').innerText = nightTime.toFixed(1);
                 document.getElementById('stat-day-landings').innerText = dayLandings;
                 document.getElementById('stat-night-landings').innerText = nightLandings;
+            }
+        }
+
+        function calculateTimesFromClock() {
+            const offblockVal = document.getElementById('f-offblock').value;
+            const takeoffVal = document.getElementById('f-takeoff').value;
+            const landingVal = document.getElementById('f-landing').value;
+            const onblockVal = document.getElementById('f-onblock').value;
+
+            if (takeoffVal && landingVal) {
+                const t1 = new Date(takeoffVal);
+                const t2 = new Date(landingVal);
+                const diffHours = (t2 - t1) / (1000 * 60 * 60);
+                if (diffHours > 0) {
+                    document.getElementById('f-time').value = diffHours.toFixed(1);
+                }
+            }
+
+            if (offblockVal && onblockVal) {
+                const o1 = new Date(offblockVal);
+                const o2 = new Date(onblockVal);
+                const diffBlock = (o2 - o1) / (1000 * 60 * 60);
+                if (diffBlock > 0) {
+                    document.getElementById('f-block-time').value = diffBlock.toFixed(1);
+                }
             }
         }
 
@@ -660,11 +691,7 @@
                 delBtn.type = 'button';
                 delBtn.className = "px-1.5 py-1 text-slate-400 hover:text-red-400 hover:bg-aviation-800/50 transition border-l border-aviation-600";
                 delBtn.innerHTML = '<i class="fa-solid fa-xmark text-[10px]"></i>';
-                delBtn.title = "Kustuta kiirvalik";
-                delBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    removePreset(p.id);
-                };
+                delBtn.onclick = (e) => { e.stopPropagation(); removePreset(p.id); };
 
                 wrapper.appendChild(btn);
                 wrapper.appendChild(delBtn);
@@ -678,47 +705,34 @@
         }
 
         function toggleAddPresetForm() {
-            const box = document.getElementById('add-preset-box');
-            box.classList.toggle('hidden');
+            document.getElementById('add-preset-box').classList.toggle('hidden');
         }
 
         async function saveNewPreset() {
             const type = document.getElementById('new-preset-type').value.trim().toUpperCase();
             const reg = document.getElementById('new-preset-reg').value.trim().toUpperCase();
-
             if (!type || !reg) {
-                showToast('Viga', 'Palun sisesta nii lennuki tüüp kui ka registrinumber.', 'warning');
+                showToast('Viga', 'Palun sisesta tüüp ja reg.', 'warning');
                 return;
             }
-
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) return;
-
-            const { error } = await supabaseClient.from('aircraft_presets').insert([{
-                user_id: session.user.id,
-                aircraft_type: type,
-                aircraft_reg: reg
-            }]);
-
-            if (error) {
-                showToast('Viga', error.message, 'warning');
-            } else {
+            const { error } = await supabaseClient.from('aircraft_presets').insert([{ user_id: session.user.id, aircraft_type: type, aircraft_reg: reg }]);
+            if (error) showToast('Viga', error.message, 'warning');
+            else {
                 document.getElementById('new-preset-type').value = '';
                 document.getElementById('new-preset-reg').value = '';
                 toggleAddPresetForm();
                 fetchPresetsFromSupabase(session.user.id);
-                showToast('Kiirvalik', 'Uus lemmiklennuk salvestatud pilve!');
+                showToast('Kiirvalik', 'Lemmiklennuk salvestatud!');
             }
         }
 
         async function removePreset(id) {
             const { error } = await supabaseClient.from('aircraft_presets').delete().eq('id', id);
-            if (error) {
-                showToast('Viga', error.message, 'warning');
-            } else {
+            if (!error) {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) fetchPresetsFromSupabase(session.user.id);
-                showToast('Kiirvalik', 'Lennuk eemaldatud kiirvalikust.', 'warning');
             }
         }
 
@@ -733,29 +747,30 @@
             document.getElementById('f-land-night').value = '0';
             document.getElementById('f-ifr').value = '0.0';
             document.getElementById('f-night').value = '0.0';
-            document.getElementById('f-fuel-start').value = '';
-            document.getElementById('f-fuel-end').value = '';
             
             renderPresetButtons();
             document.getElementById('add-preset-box').classList.add('hidden');
 
             if (flightId) {
                 modalTitle.innerHTML = `<i class="fa-solid fa-pen-to-square text-aviation-accent"></i> Muuda lennukannet`;
-                const flight = currentFlights.find(f => f.id === flightId);
+                const flight = currentFlights.find(f => String(f.id) === String(flightId));
                 if (flight) {
                     document.getElementById('f-id').value = flight.id;
-                    document.getElementById('f-date').value = flight.date;
+                    document.getElementById('f-date').value = flight.date || '';
                     document.getElementById('f-type').value = flight.aircraft_type || flight.type || '';
                     document.getElementById('f-reg').value = flight.aircraft_reg || flight.reg || '';
                     document.getElementById('f-dep').value = flight.departure_icao || flight.dep || '';
                     document.getElementById('f-arr').value = flight.arrival_icao || flight.arr || '';
-                    document.getElementById('f-time').value = flight.flight_time || flight.time || '';
-                    document.getElementById('f-offblock').value = flight.offblock ? flight.offblock.slice(0, 16) : '';
-                    document.getElementById('f-takeoff').value = flight.takeoff ? flight.takeoff.slice(0, 16) : '';
-                    document.getElementById('f-landing').value = flight.landing ? flight.landing.slice(0, 16) : '';
-                    document.getElementById('f-onblock').value = flight.onblock ? flight.onblock.slice(0, 16) : '';
-                    document.getElementById('f-fuel-start').value = flight.fuel_start ?? '';
-                    document.getElementById('f-fuel-end').value = flight.fuel_end ?? '';
+                    document.getElementById('f-time').value = flight.flight_time || flight.time || 0;
+                    document.getElementById('f-block-time').value = flight.block_time || flight.blockTime || 0;
+                    
+                    document.getElementById('f-offblock').value = flight.offblock ? flight.offblock.substring(0, 16) : '';
+                    document.getElementById('f-takeoff').value = flight.takeoff ? flight.takeoff.substring(0, 16) : '';
+                    document.getElementById('f-landing').value = flight.landing ? flight.landing.substring(0, 16) : '';
+                    document.getElementById('f-onblock').value = flight.onblock ? flight.onblock.substring(0, 16) : '';
+                    
+                    document.getElementById('f-fuel-start').value = flight.fuel_start ?? flight.fuelStart ?? '';
+                    document.getElementById('f-fuel-end').value = flight.fuel_end ?? flight.fuelEnd ?? '';
                     document.getElementById('f-role').value = flight.role || 'PIC';
                     document.getElementById('f-land-day').value = flight.landings_day ?? flight.landDay ?? 1;
                     document.getElementById('f-land-night').value = flight.landings_night ?? flight.landNight ?? 0;
@@ -766,7 +781,6 @@
             } else {
                 modalTitle.innerHTML = `<i class="fa-solid fa-plane-circle-check text-aviation-accent"></i> Lisa uus lend`;
             }
-
             modal.classList.remove('hidden');
         }
 
@@ -777,20 +791,18 @@
         async function fillFlightFromSim() {
             try {
                 const response = await fetch('http://localhost:3000/');
-                if (!response.ok) throw new Error('Simulaatori sild ei vasta');
-                
+                if (!response.ok) throw new Error();
                 const data = await response.json();
                 
                 if (data && data.telemetry) {
                     const t = data.telemetry;
-                    
                     if (t.aircraftType) document.getElementById('f-type').value = t.aircraftType.toUpperCase();
                     if (t.aircraftReg) document.getElementById('f-reg').value = t.aircraftReg.toUpperCase();
                     if (t.departureIcao) document.getElementById('f-dep').value = t.departureIcao.toUpperCase();
                     if (t.arrivalIcao) document.getElementById('f-arr').value = t.arrivalIcao.toUpperCase();
-                    if (t.flightTime !== undefined && t.flightTime !== null) {
-    document.getElementById('f-time').value = t.flightTime;
-}
+                    
+                    if (t.flightTime !== undefined && t.flightTime !== null) document.getElementById('f-time').value = t.flightTime;
+                    if (t.blockTime !== undefined && t.blockTime !== null) document.getElementById('f-block-time').value = t.blockTime;
                     
                     if (t.offblockTime) document.getElementById('f-offblock').value = t.offblockTime.slice(0, 16);
                     if (t.takeoffTime) document.getElementById('f-takeoff').value = t.takeoffTime.slice(0, 16);
@@ -800,76 +812,76 @@
                     if (t.fuelStart !== undefined && t.fuelStart !== null) document.getElementById('f-fuel-start').value = t.fuelStart;
                     if (t.fuelEnd !== undefined && t.fuelEnd !== null) document.getElementById('f-fuel-end').value = t.fuelEnd;
 
-                    showToast('SimConnect', 'Lennu- ja kütuseandmed edukalt simulaatorist loetud!');
-                } else {
-                    showToast('SimConnect', 'Simulaatorist ei saadud andmeid.', 'warning');
+                    calculateTimesFromClock();
+                    showToast('SimConnect', 'Andmed toodud simulaatorist!');
                 }
             } catch (err) {
-                console.error(err);
-                showToast('Viga', 'Ei saanud simulaatori sillaga ühendust. Veendu, et server töötab.', 'warning');
+                showToast('Teade', 'Simulaatori sild ei ole aktiivne (töötab käsitsi režiimis).', 'warning');
             }
         }
 
-        let telemetryInterval = null;
+        async function sendManualOverrideToSim() {
+            const telemetryData = {
+                telemetry: {
+                    aircraftType: document.getElementById('f-type').value,
+                    aircraftReg: document.getElementById('f-reg').value,
+                    offblockTime: document.getElementById('f-offblock').value ? document.getElementById('f-offblock').value + ':00' : null,
+                    takeoffTime: document.getElementById('f-takeoff').value ? document.getElementById('f-takeoff').value + ':00' : null,
+                    landingTime: document.getElementById('f-landing').value ? document.getElementById('f-landing').value + ':00' : null,
+                    onblockTime: document.getElementById('f-onblock').value ? document.getElementById('f-onblock').value + ':00' : null,
+                    fuelStart: parseFloat(document.getElementById('f-fuel-start').value) || null,
+                    fuelEnd: parseFloat(document.getElementById('f-fuel-end').value) || null
+                }
+            };
 
-        async function toggleSimConnection() {
-            const banner = document.getElementById('telemetry-banner');
-            const badge = document.getElementById('sim-status-badge');
+            try {
+                await fetch('http://localhost:3000/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(telemetryData)
+                });
+            } catch (err) {
+                // Silmaga ühenduse puudumist ignoreeritakse, et mitte häirida pilvirežiimi kasutajaid
+            }
+        }
+
+        async function autoStartSimTelemetry() {
             const indicator = document.getElementById('sim-indicator');
             const simText = document.getElementById('sim-text');
-            const connectBtnText = document.getElementById('connect-btn-text');
-            const connectBtn = document.getElementById('connect-sim-btn');
+            const simLiveTag = document.getElementById('sim-live-tag');
 
-            if (!isSimConnected) {
-                try {
-                    const response = await fetch('http://localhost:3000/');
-                    if (!response.ok) throw new Error('Server ei vasta');
-                    
-                    const result = await response.json();
-                    
-                    isSimConnected = true;
-                    banner.classList.remove('hidden');
-                    badge.classList.remove('hidden');
-                    indicator.className = "w-2.5 h-2.5 rounded-full bg-aviation-success animate-ping";
-                    simText.innerText = `MSFS Ühendatud (${result.sim})`;
-                    connectBtnText.innerText = "Katkesta simulaator";
-                    connectBtn.classList.add('border-aviation-success', 'bg-aviation-success/10');
-                    showToast('SimConnect', 'Ühendatud lokaalse MSFS sillaga!');
-
-                    if (result.telemetry) {
-                        document.getElementById('telemetry-route').innerText = `Lennuk: ${result.telemetry.aircraftType} (${result.telemetry.aircraftReg})`;
-                    }
-
-                    telemetryInterval = setInterval(async () => {
-                        try {
-                            const res = await fetch('http://localhost:3000/');
-                            const data = await res.json();
-                            if (data && data.telemetry) {
-                                document.getElementById('tel-alt').innerText = Math.round(data.telemetry.altitude) + ' ft';
-                                document.getElementById('tel-gs').innerText = Math.round(data.telemetry.speed) + ' kts';
-                                document.getElementById('tel-hdg').innerText = Math.round(data.telemetry.heading) + '°';
-                                
-                                document.getElementById('telemetry-route').innerText = `Lennuk: ${data.telemetry.aircraftType} (${data.telemetry.aircraftReg})`;
-                            }
-                        } catch (e) {
-                            console.error('Telemeetria viga:', e);
-                        }
-                    }, 1000);
-                    
-                } catch (err) {
-                    showToast('Ühenduse viga', 'Ei leitud kohalikku silda! Veendu, et käivitasid käsu "pythonw server.pyw".', 'warning');
-                    console.error(err);
+            try {
+                const response = await fetch('http://localhost:3000/');
+                if (!response.ok) throw new Error();
+                const result = await response.json();
+                
+                isSimConnected = true;
+                if (indicator) indicator.className = "w-2.5 h-2.5 rounded-full bg-aviation-success animate-ping";
+                if (simText) simText.innerText = `MSFS Ühendatud (${result.sim})`;
+                if (simLiveTag) {
+                    simLiveTag.className = "text-[10px] bg-aviation-success/20 text-aviation-success px-2 py-0.5 rounded";
+                    simLiveTag.innerText = "ONLINE";
                 }
-            } else {
-                isSimConnected = false;
-                clearInterval(telemetryInterval);
-                banner.classList.add('hidden');
-                badge.classList.add('hidden');
-                indicator.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
-                simText.innerText = "MSFS Offline";
-                connectBtnText.innerText = "Ühenda SimConnect";
-                connectBtn.classList.remove('border-aviation-success', 'bg-aviation-success/10');
-                showToast('SimConnect', 'Ühendus katkestatud.', 'warning');
+
+                if (telemetryInterval) clearInterval(telemetryInterval);
+                telemetryInterval = setInterval(async () => {
+                    try {
+                        const res = await fetch('http://localhost:3000/');
+                        const data = await res.json();
+                        if (data && data.telemetry) {
+                            document.getElementById('tel-alt').innerText = Math.round(data.telemetry.altitude) + ' ft';
+                            document.getElementById('tel-gs').innerText = Math.round(data.telemetry.speed) + ' kts';
+                            document.getElementById('tel-hdg').innerText = Math.round(data.telemetry.heading) + '°';
+                            document.getElementById('telemetry-route').innerText = `Lennuk: ${data.telemetry.aircraftType} (${data.telemetry.aircraftReg})`;
+                        }
+                    } catch (e) {
+                        if (indicator) indicator.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+                        if (simText) simText.innerText = "MSFS Offline";
+                    }
+                }, 1000);
+            } catch (err) {
+                if (indicator) indicator.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+                if (simText) simText.innerText = "MSFS Sild puudub (Töötab pilvirežiimis)";
             }
         }
 
