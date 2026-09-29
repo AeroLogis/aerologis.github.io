@@ -318,7 +318,7 @@
             } else {
                 headerActions.innerHTML = `
                     <div id="sim-status-badge" class="flex items-center space-x-2 bg-aviation-900/80 px-3 py-1.5 rounded-full border border-aviation-700 text-xs font-medium">
-                        <span id="sim-indicator" class="w-2.5 h-2.5 rounded-full bg-slate-500 animate-pulse"></span>
+                        <span id="sim-indicator" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
                         <span id="sim-text" class="text-slate-300">MSFS Kontrollin...</span>
                     </div>
                     <button onclick="openNewFlightModal()" class="bg-aviation-accent hover:bg-sky-400 text-aviation-900 text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-lg shadow-aviation-accent/10">
@@ -491,9 +491,7 @@
                     if (error) {
                         showToast('Viga salvestamisel', error.message, 'warning');
                     } else {
-                        // Eemaldatud 'await', et simulaatori viga ei saaks voogu blokeerida
                         sendManualOverrideToSim();
-                        
                         closeNewFlightModal();
                         document.getElementById('flight-form').reset();
                         fetchUserData(session.user.id);
@@ -792,7 +790,7 @@
 
         async function fillFlightFromSim() {
             try {
-                const response = await fetch('http://localhost:3000/');
+                const response = await fetch('http://localhost:3000/', { signal: AbortSignal.timeout(1500) });
                 if (!response.ok) throw new Error();
                 const data = await response.json();
                 
@@ -818,38 +816,37 @@
                     showToast('SimConnect', 'Andmed toodud simulaatorist!');
                 }
             } catch (err) {
-                showToast('Teade', 'Simulaatori sild ei ole aktiivne (töötab käsitsi režiimis).', 'warning');
+                showToast('Teade', 'Simulaatori sild ei ole kättesaadav (töötad pilvirežiimis).', 'warning');
             }
         }
 
-       async function sendManualOverrideToSim() {
-    const telemetryData = {
-        telemetry: {
-            aircraftType: document.getElementById('f-type').value,
-            aircraftReg: document.getElementById('f-reg').value,
-            offblockTime: document.getElementById('f-offblock').value ? document.getElementById('f-offblock').value + ':00' : null,
-            takeoffTime: document.getElementById('f-takeoff').value ? document.getElementById('f-takeoff').value + ':00' : null,
-            landingTime: document.getElementById('f-landing').value ? document.getElementById('f-landing').value + ':00' : null,
-            onblockTime: document.getElementById('f-onblock').value ? document.getElementById('f-onblock').value + ':00' : null,
-            fuelStart: parseFloat(document.getElementById('f-fuel-start').value) || null,
-            fuelEnd: parseFloat(document.getElementById('f-fuel-end').value) || null
-        }
-    };
+        async function sendManualOverrideToSim() {
+            if (!isSimConnected) return; // Kui sild pole ühendatud, ära üldse proovi saata
+            
+            const telemetryData = {
+                telemetry: {
+                    aircraftType: document.getElementById('f-type').value,
+                    aircraftReg: document.getElementById('f-reg').value,
+                    offblockTime: document.getElementById('f-offblock').value ? document.getElementById('f-offblock').value + ':00' : null,
+                    takeoffTime: document.getElementById('f-takeoff').value ? document.getElementById('f-takeoff').value + ':00' : null,
+                    landingTime: document.getElementById('f-landing').value ? document.getElementById('f-landing').value + ':00' : null,
+                    onblockTime: document.getElementById('f-onblock').value ? document.getElementById('f-onblock').value + ':00' : null,
+                    fuelStart: parseFloat(document.getElementById('f-fuel-start').value) || null,
+                    fuelEnd: parseFloat(document.getElementById('f-fuel-end').value) || null
+                }
+            };
 
-    try {
-        // Proovime saata andmed ainult siis, kui kohalik sild on eelnevalt tuvastatud online'iks
-        if (typeof isSimConnected !== 'undefined' && isSimConnected) {
-            await fetch('http://localhost:3000/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(telemetryData),
-                signal: AbortSignal.timeout(1000) // Katkestab kiiresti, kui sild ei vasta
-            });
+            try {
+                await fetch('http://localhost:3000/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(telemetryData),
+                    signal: AbortSignal.timeout(1000)
+                });
+            } catch (err) {
+                // Summutame vea, et see ei segaks
+            }
         }
-    } catch (err) {
-        // Ignoreerime vaikselt – kui silda pole või see ei vasta, siis ei tee midagi ja konsool jääb puhtaks
-    }
-}
 
         async function autoStartSimTelemetry() {
             const indicator = document.getElementById('sim-indicator');
@@ -857,7 +854,7 @@
             const simLiveTag = document.getElementById('sim-live-tag');
 
             try {
-                const response = await fetch('http://localhost:3000/');
+                const response = await fetch('http://localhost:3000/', { signal: AbortSignal.timeout(1500) });
                 if (!response.ok) throw new Error();
                 const result = await response.json();
                 
@@ -872,7 +869,7 @@
                 if (telemetryInterval) clearInterval(telemetryInterval);
                 telemetryInterval = setInterval(async () => {
                     try {
-                        const res = await fetch('http://localhost:3000/');
+                        const res = await fetch('http://localhost:3000/', { signal: AbortSignal.timeout(1000) });
                         const data = await res.json();
                         if (data && data.telemetry) {
                             document.getElementById('tel-alt').innerText = Math.round(data.telemetry.altitude) + ' ft';
@@ -881,12 +878,14 @@
                             document.getElementById('telemetry-route').innerText = `Lennuk: ${data.telemetry.aircraftType} (${data.telemetry.aircraftReg})`;
                         }
                     } catch (e) {
-                        if (indicator) indicator.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+                        isSimConnected = false;
+                        if (indicator) indicator.className = "w-2.5 h-2.5 rounded-full bg-slate-500 animate-none";
                         if (simText) simText.innerText = "MSFS Offline";
                     }
                 }, 1000);
             } catch (err) {
-                if (indicator) indicator.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+                isSimConnected = false;
+                if (indicator) indicator.className = "w-2.5 h-2.5 rounded-full bg-slate-500 animate-none";
                 if (simText) simText.innerText = "MSFS Sild puudub (Töötab pilvirežiimis)";
             }
         }
