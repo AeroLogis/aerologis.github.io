@@ -491,7 +491,9 @@
                     if (error) {
                         showToast('Viga salvestamisel', error.message, 'warning');
                     } else {
-                        await sendManualOverrideToSim();
+                        // Eemaldatud 'await', et simulaatori viga ei saaks voogu blokeerida
+                        sendManualOverrideToSim();
+                        
                         closeNewFlightModal();
                         document.getElementById('flight-form').reset();
                         fetchUserData(session.user.id);
@@ -820,32 +822,30 @@
             }
         }
 
-       async function sendManualOverrideToSim() {
-    const telemetryData = {
-        telemetry: {
-            aircraftType: document.getElementById('f-type').value,
-            aircraftReg: document.getElementById('f-reg').value,
-            offblockTime: document.getElementById('f-offblock').value ? document.getElementById('f-offblock').value + ':00' : null,
-            takeoffTime: document.getElementById('f-takeoff').value ? document.getElementById('f-takeoff').value + ':00' : null,
-            landingTime: document.getElementById('f-landing').value ? document.getElementById('f-landing').value + ':00' : null,
-            onblockTime: document.getElementById('f-onblock').value ? document.getElementById('f-onblock').value + ':00' : null,
-            fuelStart: parseFloat(document.getElementById('f-fuel-start').value) || null,
-            fuelEnd: parseFloat(document.getElementById('f-fuel-end').value) || null
-        }
-    };
+        async function sendManualOverrideToSim() {
+            const telemetryData = {
+                telemetry: {
+                    aircraftType: document.getElementById('f-type').value,
+                    aircraftReg: document.getElementById('f-reg').value,
+                    offblockTime: document.getElementById('f-offblock').value ? document.getElementById('f-offblock').value + ':00' : null,
+                    takeoffTime: document.getElementById('f-takeoff').value ? document.getElementById('f-takeoff').value + ':00' : null,
+                    landingTime: document.getElementById('f-landing').value ? document.getElementById('f-landing').value + ':00' : null,
+                    onblockTime: document.getElementById('f-onblock').value ? document.getElementById('f-onblock').value + ':00' : null,
+                    fuelStart: parseFloat(document.getElementById('f-fuel-start').value) || null,
+                    fuelEnd: parseFloat(document.getElementById('f-fuel-end').value) || null
+                }
+            };
 
-    try {
-        await fetch('http://localhost:3000/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(telemetryData)
-        });
-    } catch (err) {
-        // Kui simulaatori sild ei ole sisse lülitatud, neelame vea vaikselt alla,
-        // et andmebaasi salvestamine (Supabase) saaks edukalt lõpule viidud.
-        console.log("Simulaatori sild ei ole aktiivne – andmed salvestati ainult pilveandmebaasi.");
-    }
-}
+            try {
+                await fetch('http://localhost:3000/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(telemetryData)
+                });
+            } catch (err) {
+                console.log("Simulaatori sild ei ole aktiivne – andmed salvestati ainult pilveandmebaasi.");
+            }
+        }
 
         async function autoStartSimTelemetry() {
             const indicator = document.getElementById('sim-indicator');
